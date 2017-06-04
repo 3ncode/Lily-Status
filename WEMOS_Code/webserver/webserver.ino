@@ -8,12 +8,12 @@
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
-
+#include <Pushover.h>
 MDNSResponder mdns;
 
 // Replace with your network credentials
-const char* ssid = "SSID";
-const char* password = "PASSWORD";
+const char* ssid = "";
+const char* password = "";
 const int buttonPin = D3;       // Button Board
 const int ledPin = BUILTIN_LED; // the onboard LED
 int buttonState = 0;        // Module Button State
@@ -21,6 +21,7 @@ int lilyState = 0;         // Lilys Happiness State
 int brightness = 0;        // how bright the LED is (0 = full, 512 = dim, 1023 = off)
 int fadeAmount = 5;        // how many points to fade the LED by
 const int delayMillis = 1;      // how long to pause between each loop
+Pushover pushover = Pushover("#","#");
 
 extern "C"
 {  
@@ -62,11 +63,15 @@ void setup(void){
     Serial.print(".");
     } 
   }
+
   Serial.println("");
   Serial.print("Connected to ");
   Serial.println(ssid);
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
+  String ip = WiFi.localIP().toString().c_str();
+  pushover.setMessage("Lily Status is operational on: " + ip + "\n With a current status of: " + lilyState);
+  pushover.send();
   Serial.print("Lily State: ");
   Serial.println(lilyState);
   analogWrite(ledPin, 1023); // set default led state
@@ -125,6 +130,8 @@ void setup(void){
     server.sendHeader("Location", String("/"), true);
     server.send ( 302, "text/plain", "");
     delay(1000);
+    pushover.setMessage("Alarm reset.\nLet calm descend...");
+    pushover.send();
   });
 
   // Start Server
@@ -142,6 +149,8 @@ void loop(void){
     lilyState = 1;
     Serial.print("Lily State Set To: ");
     Serial.println(lilyState);
+    pushover.setMessage("Alarm pushed!\nPANIIIIC!");
+    pushover.send();
   }
 if (lilyState == 1) {
     digitalWrite(ledPin, LOW);  // LED on
